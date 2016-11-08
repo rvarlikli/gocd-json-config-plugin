@@ -96,13 +96,31 @@ public class ConfigDirectoryParser {
         JsonElement materialsElement = jsonElement.getAsJsonObject().get("materials");
         JsonArray materialsArray = materialsElement.getAsJsonArray();
         for(int i=0 ; i< materialsArray.size();i++){
+
             JsonElement materialObject =  materialsArray.get(i);
-            JsonObject attributesObject = materialObject.getAsJsonObject().get("attributes").getAsJsonObject();
-            Set<Map.Entry<String, JsonElement>> entries = attributesObject.entrySet();//will return members of your object
-            for (Map.Entry<String, JsonElement> entry: entries) {
-                materialObject.getAsJsonObject().add(entry.getKey(), entry.getValue());
+            JsonElement materialType = materialObject.getAsJsonObject().get("type");
+            if(materialType.equals(new JsonPrimitive("package")))
+            {
+                JsonObject attributesObject = materialObject.getAsJsonObject().get("attributes").getAsJsonObject();
+                if(attributesObject != null) {
+                    Set<Map.Entry<String, JsonElement>> entries = attributesObject.entrySet();//will return members of your object
+                    for (Map.Entry<String, JsonElement> entry : entries) {
+                        materialObject.getAsJsonObject().add("name", entry.getValue());
+                        materialObject.getAsJsonObject().add("package_id", entry.getValue());
+                    }
+                    materialObject.getAsJsonObject().remove("attributes");
+                }
             }
-            materialObject.getAsJsonObject().remove("attributes");
+            else {
+                JsonObject attributesObject = materialObject.getAsJsonObject().get("attributes").getAsJsonObject();
+                if(attributesObject != null) {
+                    Set<Map.Entry<String, JsonElement>> entries = attributesObject.entrySet();//will return members of your object
+                    for (Map.Entry<String, JsonElement> entry : entries) {
+                        materialObject.getAsJsonObject().add(entry.getKey(), entry.getValue());
+                    }
+                    materialObject.getAsJsonObject().remove("attributes");
+                }
+            }
         }
         /// stages approval section
         JsonElement stagesElement = jsonElement.getAsJsonObject().get("stages");
@@ -128,16 +146,21 @@ public class ConfigDirectoryParser {
                 {
                     JsonElement tasksObject = jobsTasksArray.get(k);
                     JsonObject tasksAttributesObject = tasksObject.getAsJsonObject().get("attributes").getAsJsonObject();
-                    Set<Map.Entry<String, JsonElement>> entriesAttributes = tasksAttributesObject.entrySet();
-                    for (Map.Entry<String, JsonElement> entry: entriesAttributes) {
-                        if(entry.getKey().equals("run_if"))
-                        {
-                            JsonArray tempValue = entry.getValue().getAsJsonArray();
-                            entry.setValue(tempValue.get(0));
+                    if(tasksAttributesObject != null) {
+                        Set<Map.Entry<String, JsonElement>> entriesAttributes = tasksAttributesObject.entrySet();
+                        for (Map.Entry<String, JsonElement> entry : entriesAttributes) {
+                            if (entry.getKey().equals("run_if")) {
+
+                                JsonArray tempValue = entry.getValue().getAsJsonArray();
+                                if (tempValue.size() > 0)
+                                    entry.setValue(tempValue.get(0));
+                                else
+                                    entry.setValue(new JsonPrimitive(""));
+                            }
+                            tasksObject.getAsJsonObject().add(entry.getKey(), entry.getValue());
                         }
-                        tasksObject.getAsJsonObject().add(entry.getKey(), entry.getValue());
+                        tasksObject.getAsJsonObject().remove("attributes");
                     }
-                    tasksObject.getAsJsonObject().remove("attributes");
                 }
             }
         }
